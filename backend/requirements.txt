@@ -1,0 +1,8 @@
+django
+requests
+python-jose
+openai
+djangorestframework
+python-dotenv
+clerk-backend-api
+PyJWT

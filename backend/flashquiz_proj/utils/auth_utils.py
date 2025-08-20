@@ -3,9 +3,10 @@ from functools import wraps
 import requests
 from clerk_backend_api import Clerk
 from django.http import JsonResponse
-from flashquiz_proj.settings import CLERK_ISSUER, CLERK_JWKS_URL, CLERK_SECRET_KEY
 from jose import jwk, jwt
 from jwt import PyJWTError
+
+from flashquiz_proj.settings import CLERK_ISSUER, CLERK_JWKS_URL, CLERK_SECRET_KEY
 
 
 # NOTE: JWKS stand for JSON Web Key Sets.  We need to use the JWKS to get the public keys from the Clerk API.

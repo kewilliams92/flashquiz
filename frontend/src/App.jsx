@@ -1,80 +1,57 @@
 import "./App.css";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from "@clerk/clerk-react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
+import DecksLayout from "./layouts/DecksLayout";
 import DecksPage from "./pages/DecksPage";
+import HomePage from "./pages/HomePage.jsx";
+import Navbar from "./components/Navbar.jsx";
+import DeckDetailPage from "./pages/DeckDetailPage.jsx";
+import FlashcardDetailPage from "./pages/FlashcardDetailPage.jsx";
+import StudyModePage from "./pages/StudyModePage.jsx";
 
-// Protected Route Wrapper
 function ProtectedRoute({ children }) {
-  return <SignedIn>{children}</SignedIn>;
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) return <div>Loading...</div>;
+  if (!isSignedIn) return <HomePage />;
+  return children;
 }
 
 function App() {
-  return (
-    <Router>
-      <header>
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
-      </header>
+  const { isSignedIn, isLoaded } = useAuth();
+  if (!isLoaded) return <div>Loading...</div>;
 
+  return (
+    <>
+      <Navbar />
       <Routes>
+        {/* Home route */}
         <Route
           path="/"
-          element={
-            <SignedIn>
-              <Navigate to="/decks" />
-            </SignedIn>
-          }
+          element={isSignedIn ? <Navigate to="/decks" replace /> : <HomePage />}
         />
+        {/* Decks layout route */}
         <Route
-          path="/decks"
+          path="/decks/*"
           element={
             <ProtectedRoute>
-              <DecksPage />
+              <DecksLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<DecksPage />} />
+          <Route path=":deckId" element={<DeckDetailPage />} />
+          <Route
+            path=":deckId/flashcards/:flashcardId"
+            element={<FlashcardDetailPage />}
+          />
+          <Route path=":deckId/study" element={<StudyModePage />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+    </>
   );
 }
 
 export default App;
-
-// import "./App.css";
-// import {
-//   SignedIn,
-//   SignedOut,
-//   SignInButton,
-//   UserButton,
-// } from "@clerk/clerk-react";
-//
-// function App() {
-//   return (
-//     <>
-//       <header>
-//         <SignedOut>
-//           <SignInButton />
-//         </SignedOut>
-//         <SignedIn>
-//           <UserButton />
-//         </SignedIn>
-//       </header>
-//     </>
-//   );
-// }
-//
-// export default App;

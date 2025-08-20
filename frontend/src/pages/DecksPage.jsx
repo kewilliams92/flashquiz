@@ -1,141 +1,85 @@
-import { useAuth } from "@clerk/clerk-react";
-import axios from "axios";
 import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import Decks from "../components/Decks.jsx";
 
-function DecksPage() {
-  const { getToken } = useAuth({ template: "flashquiz" });
-  const [decks, setDecks] = useState([]);
-  const [selectedDeck, setSelectedDeck] = useState(null);
+const DecksPage = () => {
+  const {
+    decks,
+    fetchDecks,
+    deleteDeck,
+    aiConstructedDeck,
+    createDeck,
+    selectDeck,
+  } = useOutletContext();
+
   const [topic, setTopic] = useState("");
-  const [flashcards, setFlashcards] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Helper for making authenticated requests
-  const authRequest = async (axiosConfig) => {
-    const token = await getToken(); // always fresh token
-    return axios({
-      ...axiosConfig,
-      headers: {
-        ...axiosConfig.headers,
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  };
-
-  const fetchDecks = async () => {
+  const handleGenerateDeck = async () => {
+    if (!topic) return alert("Please enter a topic for the AI-generated deck!");
+    setLoading(true);
     try {
-      const res = await authRequest({ method: "GET", url: "/api/decks/" });
-      setDecks(res.data);
-    } catch (err) {
-      console.error("Error fetching decks:", err);
-    }
-  };
-
-  const createDeck = async () => {
-    try {
-      await authRequest({
-        method: "POST",
-        url: "/api/decks/",
-        data: { title: "My First Deck", description: "" },
-      });
+      await aiConstructedDeck(topic);
       fetchDecks();
     } catch (err) {
-      console.error("Error creating deck:", err);
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setTopic("");
     }
   };
 
-  const deleteDeck = async (deckId) => {
-    if (!window.confirm("Are you sure you want to delete this deck?")) return;
-
+  const handleCreateDeck = async () => {
+    if (!window.confirm("Create a new blank deck?")) return;
+    setLoading(true);
     try {
-      await authRequest({ method: "DELETE", url: `/api/decks/${deckId}/` });
-      setSelectedDeck(null);
+      await createDeck();
       fetchDecks();
     } catch (err) {
-      console.error("Error deleting deck:", err);
-    }
-  };
-
-  const selectDeck = async (deck) => {
-    setSelectedDeck(deck);
-    try {
-      const res = await authRequest({
-        method: "GET",
-        url: "/api/flashcards/",
-        params: { deck_id: deck.id },
-      });
-      setFlashcards(res.data);
-    } catch (err) {
-      console.error("Error fetching flashcards:", err);
-      setFlashcards([]);
-    }
-  };
-
-  const generateFlashcards = async () => {
-    if (!selectedDeck) return alert("Please select a deck first!");
-    if (!topic) return alert("Please enter a topic!");
-
-    try {
-      const res = await authRequest({
-        method: "POST",
-        url: "/api/generate-flashcards/",
-        data: { topic },
-      });
-      setFlashcards(res.data.flashcards || []);
-    } catch (err) {
-      console.error("Error generating flashcards:", err);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h1>Decks</h1>
-      <button onClick={createDeck}>Create Deck</button>
-      <button onClick={fetchDecks}>Fetch Decks</button>
+    <div className="p-6">
+      {/* Controls for create + AI deck */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-4 sm:space-y-0">
+        <button
+          onClick={handleCreateDeck}
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
+        >
+          Create Deck
+        </button>
 
-      <ul>
-        {decks.map((deck) => (
-          <li key={deck.id}>
-            <span
-              style={{
-                cursor: "pointer",
-                fontWeight: selectedDeck?.id === deck.id ? "bold" : "normal",
-              }}
-              onClick={() => selectDeck(deck)}
-            >
-              {deck.title}
-            </span>
-            <button onClick={() => deleteDeck(deck.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
-
-      {selectedDeck && (
-        <>
-          <h2>Selected Deck: {selectedDeck.title}</h2>
-          <h3>Generate AI Flashcards</h3>
+        <div className="flex space-x-2">
           <input
             type="text"
-            placeholder="Enter topic"
+            placeholder="Enter topic for AI deck"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+            className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button onClick={generateFlashcards}>Generate Flashcards</button>
+          <button
+            onClick={handleGenerateDeck}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+          >
+            Generate AI Deck
+          </button>
+        </div>
+      </div>
 
-          <h3>Flashcards</h3>
-          {flashcards.length === 0 && <p>No flashcards yet.</p>}
-          <ul>
-            {flashcards.map((card, index) => (
-              <li key={index}>
-                <strong>Q:</strong> {card.question} <br />
-                <strong>A:</strong> {card.answer} <br />
-                <strong>Hint:</strong> {card.hint}
-              </li>
-            ))}
-          </ul>
-        </>
+      {/* Progress bar */}
+      {loading && (
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+          <div className="bg-blue-600 h-2 rounded-full animate-pulse w-1/2"></div>
+        </div>
       )}
+
+      <Decks decks={decks} deleteDeck={deleteDeck} selectDeck={selectDeck} />
     </div>
   );
-}
+};
 
 export default DecksPage;

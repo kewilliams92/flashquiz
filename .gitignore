@@ -1,2 +1,6 @@
 .env
 frontend/.env
+frontend/flake.nix
+frontend/flake.lock
+backend/flake.nix
+backend/flake.lock
