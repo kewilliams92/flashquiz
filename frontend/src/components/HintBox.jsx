@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 
+//NOTE: I wanted a handy hint box for my flashcards, so I created this component.  It uses Framer Motion to animate the hint box in and out for the user to control.
 const HintBox = ({ hint }) => {
   const [showHint, setShowHint] = useState(false);
 
@@ -7,7 +9,7 @@ const HintBox = ({ hint }) => {
     <div className="flex items-center space-x-2 mt-4">
       <button
         onClick={() => setShowHint(!showHint)}
-        className="bg-yellow-400 text-white px-4 py-2 rounded hover:bg-yellow-500 transition"
+        className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-500 transition"
       >
         Hint
       </button>

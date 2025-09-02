@@ -15,6 +15,9 @@ class DeckSerializer(serializers.ModelSerializer):
 
 
 class FlashcardSerializer(serializers.ModelSerializer):
+    # Include deck field for reading (when returning flashcards)
+    deck = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Flashcard
         fields = ["id", "deck", "question", "answer", "hint"]

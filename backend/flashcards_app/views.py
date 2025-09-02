@@ -6,18 +6,15 @@ from dotenv import load_dotenv
 from flashquiz_proj.utils.auth_utils import clerk_authenticated
 from openai import OpenAI
 from rest_framework.response import Response
-from rest_framework.status import (
-    HTTP_200_OK,
-    HTTP_201_CREATED,
-    HTTP_204_NO_CONTENT,
-    HTTP_400_BAD_REQUEST,
-    HTTP_404_NOT_FOUND,
-    HTTP_500_INTERNAL_SERVER_ERROR,
-)
+from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
+                                   HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,
+                                   HTTP_404_NOT_FOUND,
+                                   HTTP_500_INTERNAL_SERVER_ERROR)
 from rest_framework.views import APIView
 
 from .models import Deck, Feedback, Flashcard
-from .serializers import DeckSerializer, FeedbackSerializer, FlashcardSerializer
+from .serializers import (DeckSerializer, FeedbackSerializer,
+                          FlashcardSerializer)
 from .utils.helperfunc import validate_flashcard
 
 load_dotenv()
@@ -38,8 +35,9 @@ class GenerateFlashcardsView(APIView):
                 {"error": "Topic not provided."}, status=HTTP_400_BAD_REQUEST
             )
 
-        # Fetching wikipedia page
-        topic_formatted = topic.replace(" ", "_")
+        # Fetching wikipedia page.  The topic is formatted to be a URL-friendly string, i.e. dwayne johnson -> Dwayne_Johnson
+        capitalized_topic = topic.title()
+        topic_formatted = capitalized_topic.replace(" ", "_")
         wiki_url = f"https://api.wikimedia.org/core/v1/wikipedia/en/page/{topic_formatted}/description"
 
         headers = {
@@ -59,7 +57,6 @@ class GenerateFlashcardsView(APIView):
         # Check for source
         wiki_summary = wiki_data.get("description")
         if not wiki_summary:
-            print("Wiki data returned:", wiki_data)
             return Response(
                 {"error": "No source content found for this topic."},
                 status=HTTP_404_NOT_FOUND,
@@ -85,9 +82,12 @@ class GenerateFlashcardsView(APIView):
         ]
         """
 
+        # This is where the magic happens, the AI generates the flashcards by calling the OpenAI API
+        # Afterwards, we validate the response to make sure it's in the correct format
         ai_response = client.responses.create(model="gpt-4o-mini", input=ai_prompt)
         flashcards_data = validate_flashcard(ai_response.output_text)
 
+        # If the AI fails to generate the flashcards, we return an error
         if not flashcards_data:
             return Response(
                 {"error": "Failed to generate flashcards."},
@@ -101,6 +101,7 @@ class GenerateFlashcardsView(APIView):
             defaults={"description": wiki_summary},
         )
 
+        # We then loop through the flashcards and save them
         saved_flashcards = []
         for card in flashcards_data:
             fc = Flashcard.objects.create(
@@ -118,7 +119,7 @@ class GenerateFlashcardsView(APIView):
                 }
             )
 
-        # print("these are the cards in saved_flashcards:", saved_flashcards)
+        # Once the flashcards are saved, we return the deck and the flashcards which were created
         return Response(
             {
                 "deck": {"id": deck.id, "title": deck.title},
@@ -131,9 +132,11 @@ class GenerateFlashcardsView(APIView):
 class DeckListCreateView(APIView):
     @clerk_authenticated
     def get(self, request):
-        # Use the Clerk user ID from request.user_details
+        # NOTE: Unlike Django's built-in auth, we're not using a User ForeignKey or DjangoRestFramework's permission_classes.
+        # Clerk attaches `request.user_details` from the Clerk software development kit (SDK), which holds the Clerk user ID (a string, e.g. "user_abc123").
+        # Our Deck model stores this Clerk user_id string directly in the DB,
+        # so we filter on that field instead of using request.user.decks.all().
         user_id = request.user_details.id
-        print("User ID from request:", user_id)
         decks = Deck.objects.filter(user_id=user_id)
         serializer = DeckSerializer(decks, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
@@ -192,6 +195,7 @@ class FlashcardListCreateView(APIView):
         serializer = FlashcardSerializer(flashcards, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
 
+
     @clerk_authenticated
     def post(self, request):
         deck_id = request.data.get("deck_id")
@@ -203,7 +207,12 @@ class FlashcardListCreateView(APIView):
         user_id = request.user_details.id
         deck = get_object_or_404(Deck, id=deck_id, user_id=user_id)
 
-        serializer = FlashcardSerializer(data=request.data)
+        # Create a copy of the request data without deck_id since serializer doesn't expect it
+        serializer_data = {
+            key: value for key, value in request.data.items() if key != "deck_id"
+        }
+
+        serializer = FlashcardSerializer(data=serializer_data)
         if serializer.is_valid():
             serializer.save(deck=deck)
             return Response(serializer.data, status=HTTP_201_CREATED)
@@ -262,7 +271,6 @@ class FeedbackListCreateView(APIView):
 
 
 class FeedbackDetailView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
 
     @clerk_authenticated
     def get_object(self, pk):

@@ -6,3 +6,4 @@ djangorestframework
 python-dotenv
 clerk-backend-api
 PyJWT
+plaid-python
