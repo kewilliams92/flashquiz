@@ -1,6 +1,7 @@
 import os
-
-import requests
+import wikipedia
+import logging
+from wikipedia.exceptions import DisambiguationError, PageError
 from django.shortcuts import get_object_or_404
 from dotenv import load_dotenv
 from flashquiz_proj.utils.auth_utils import clerk_authenticated
@@ -18,6 +19,7 @@ from .serializers import (DeckSerializer, FeedbackSerializer,
 from .utils.helperfunc import validate_flashcard
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 access_token = os.getenv("WIKIPEDIA_ACCESS_TOKEN")
 
@@ -34,46 +36,111 @@ class GenerateFlashcardsView(APIView):
             return Response(
                 {"error": "Topic not provided."}, status=HTTP_400_BAD_REQUEST
             )
-
-        # Fetching wikipedia page.  The topic is formatted to be a URL-friendly string, i.e. dwayne johnson -> Dwayne_Johnson
-        capitalized_topic = topic.title()
-        topic_formatted = capitalized_topic.replace(" ", "_")
-        wiki_url = f"https://api.wikimedia.org/core/v1/wikipedia/en/page/{topic_formatted}/description"
-
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "User-Agent": "flashquiz (kewilliamsdev@gmail.com)",
-        }
-
-        wiki_response = requests.get(wiki_url, headers=headers)
-        if wiki_response.status_code != 200:
-            return Response(
-                {"error": "Failed to fetch Wikipedia page."},
-                status=HTTP_400_BAD_REQUEST,
-            )
-
-        wiki_data = wiki_response.json()
-
-        # Check for source
-        wiki_summary = wiki_data.get("description")
+        
+        logger.info(f"Searching for topic: {topic}")
+        
+        # Fetch Wikipedia content using the wikipedia library
+        try:
+            # Try to get the page directly - first with auto_suggest off
+            wiki_page = wikipedia.page(topic, auto_suggest=False)
+            wiki_summary = wiki_page.summary
+            page_title = wiki_page.title
+            logger.info(f"Found direct match: {page_title}")
+            
+        except PageError:
+            # If that fails, try with auto_suggest on for one attempt
+            logger.info(f"No exact match, trying with auto-suggest...")
+            try:
+                wiki_page = wikipedia.page(topic, auto_suggest=True)
+                wiki_summary = wiki_page.summary
+                page_title = wiki_page.title
+                logger.info(f"Found match with auto-suggest: {page_title}")
+                
+                # Only proceed if the result seems reasonable
+                topic_words = set(topic.lower().split())
+                title_words = set(page_title.lower().split())
+                
+                # Check if at least one word matches
+                if not topic_words.intersection(title_words):
+                    logger.warning(f"Auto-suggest result '{page_title}' doesn't match '{topic}'")
+                    raise PageError(topic)
+                    
+            except PageError:
+                logger.info(f"Auto-suggest failed, falling back to search...")
+                # Fall back to search
+                search_results = wikipedia.search(topic, results=5)
+                logger.info(f"Search results: {search_results}")
+                
+                if not search_results:
+                    return Response(
+                        {"error": f"No Wikipedia page found for '{topic}'."},
+                        status=HTTP_404_NOT_FOUND,
+                    )
+                
+                # Try to find a close match (case-insensitive)
+                topic_lower = topic.lower()
+                best_match = None
+                
+                for result in search_results:
+                    if result.lower() == topic_lower:
+                        best_match = result
+                        break
+                
+                # If no exact match, use the first search result
+                if not best_match:
+                    best_match = search_results[0]
+                
+                logger.info(f"Using best match from search: {best_match}")
+                
+                try:
+                    wiki_page = wikipedia.page(best_match, auto_suggest=False)
+                    wiki_summary = wiki_page.summary
+                    page_title = wiki_page.title
+                    logger.info(f"Successfully fetched page: {page_title}")
+                        
+                except PageError:
+                    return Response(
+                        {"error": f"Could not fetch Wikipedia content for '{topic}'."},
+                        status=HTTP_404_NOT_FOUND,
+                    )
+            
+        except DisambiguationError as e:
+            logger.info(f"Disambiguation needed. Options: {e.options[:3]}")
+            # If the topic is ambiguous, use the first option
+            try:
+                wiki_page = wikipedia.page(e.options[0], auto_suggest=False)
+                wiki_summary = wiki_page.summary
+                page_title = wiki_page.title
+                logger.info(f"Used first disambiguation option: {page_title}")
+            except (PageError, IndexError):
+                return Response(
+                    {"error": f"The topic '{topic}' is ambiguous. Please be more specific."},
+                    status=HTTP_400_BAD_REQUEST,
+                )
+        
+        # Check if we have content
         if not wiki_summary:
+            logger.error("No summary content found")
             return Response(
                 {"error": "No source content found for this topic."},
                 status=HTTP_404_NOT_FOUND,
             )
-
+        
+        logger.info(f"Summary length: {len(wiki_summary)} characters")
+        
         ai_prompt = f"""
         You are an educational AI assistant. 
-
         Given the following article, create **exactly 5 flashcards**.
+        Each flashcard should have important information about the topic.
+        Try to keep each flashcard unique (e.g. do not create multiple flashcards based on personal life)
         Each flashcard must be a JSON object with exactly these fields:
-        - "question": the question text.  Questions must not exceed 50 characters
+        - "question": the question text. Questions must not exceed 50 characters
         - "answer": the answer text
         - "hint": a helpful hint for the question
-
-        Article title: {topic}
+        
+        Article title: {page_title}
         Article summary: {wiki_summary}
-
+        
         Return ONLY valid JSON array of objects. Do NOT include any extra text.
         Example:
         [
@@ -82,26 +149,39 @@ class GenerateFlashcardsView(APIView):
         ]
         """
 
-        # This is where the magic happens, the AI generates the flashcards by calling the OpenAI API
-        # Afterwards, we validate the response to make sure it's in the correct format
-        ai_response = client.responses.create(model="gpt-4o-mini", input=ai_prompt)
-        flashcards_data = validate_flashcard(ai_response.output_text)
+        short_summary = f"""
+        TAKE THE WIKI SUMMARY AND CREATE A SHORT SUMMARY OF 200 characters MAX!
+        THE SHORT SUMMARY MUST HAVE SURFACE LEVEL INFORMATION ABOUT THE TOPIC
 
-        # If the AI fails to generate the flashcards, we return an error
+        Provided summary: {wiki_summary}
+
+        RETURN ONLY VALID STRING 
+        Example:
+        "Kevin Hart ... ... ...
+        """
+        
+        ai_response = client.responses.create(model="gpt-4o-mini", input=ai_prompt)
+        ai_summary = client.responses.create(model="gpt-4o-mini", input=short_summary)
+        logger.info(f"=== AI RAW RESPONSE ===")
+        logger.info(ai_response.output_text)
+        logger.info(f"=== END RAW RESPONSE ===")
+        
+        flashcards_data = validate_flashcard(ai_response.output_text)
+        logger.info(f"Validated flashcards count: {len(flashcards_data)}")
+        
         if not flashcards_data:
             return Response(
                 {"error": "Failed to generate flashcards."},
                 status=HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        # Now we save this to the user's deck
+        
+        # Save to the user's deck using the proper Wikipedia page title
         deck, created = Deck.objects.get_or_create(
             user_id=request.user_details.id,
-            title=topic,
-            defaults={"description": wiki_summary},
+            title=page_title,
+            defaults={"description": ai_summary.output_text},  
         )
-
-        # We then loop through the flashcards and save them
+        
         saved_flashcards = []
         for card in flashcards_data:
             fc = Flashcard.objects.create(
@@ -118,8 +198,7 @@ class GenerateFlashcardsView(APIView):
                     "hint": fc.hint,
                 }
             )
-
-        # Once the flashcards are saved, we return the deck and the flashcards which were created
+        
         return Response(
             {
                 "deck": {"id": deck.id, "title": deck.title},
@@ -127,7 +206,7 @@ class GenerateFlashcardsView(APIView):
             },
             status=HTTP_201_CREATED,
         )
-
+    
 
 class DeckListCreateView(APIView):
     @clerk_authenticated
