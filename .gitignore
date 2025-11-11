@@ -1,6 +1,19 @@
+backend/.venv
 .env
 frontend/.env
 frontend/flake.nix
 frontend/flake.lock
 backend/flake.nix
 backend/flake.lock
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*$py.class
+
+# OS files
+.DS_Store
+Thumbs.db
