@@ -50,7 +50,7 @@ const DecksPage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="min-h-full bg-gradient-to-br from-slate-200 via-blue-100 to-indigo-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="max-w-6xl mx-auto px-6 py-8">
 
           {/* Header */}
@@ -62,7 +62,7 @@ const DecksPage = () => {
           </div>
 
           {/* Creation Controls */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8 border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6 text-center">Create New Deck</h2>
             <div className="grid md:grid-cols-2 gap-8">
 
@@ -105,8 +105,8 @@ const DecksPage = () => {
                     onChange={(e) => setAiTopic(e.target.value)}
                     className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
-                  <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <div className="bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-lg p-4">
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
                       AI will automatically generate flashcards and content based on your topic
                     </p>
                   </div>
@@ -125,7 +125,7 @@ const DecksPage = () => {
           {/* Loading bar */}
           {loading && (
             <div className="mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-100 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
                   <span className="text-gray-700 dark:text-gray-300 font-medium">Creating your deck...</span>
@@ -138,7 +138,7 @@ const DecksPage = () => {
           )}
 
           {/* Decks List */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6">
               Total Decks: {decks.length}
             </h2>

@@ -85,10 +85,10 @@ const DeckDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-full bg-gradient-to-br from-slate-200 via-blue-100 to-indigo-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8 border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-3">
@@ -103,8 +103,8 @@ const DeckDetailPage = () => {
 
               {/* Stats */}
               <div className="flex items-center space-x-6">
-                <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                  <span className="text-sm text-blue-600 font-medium">
+                <div className="bg-blue-100 border border-blue-200 px-4 py-2 rounded-lg">
+                  <span className="text-sm text-blue-700 font-medium">
                     {flashcards.length}{" "}
                     {flashcards.length === 1 ? "Card" : "Cards"}
                   </span>
@@ -132,7 +132,7 @@ const DeckDetailPage = () => {
         </div>
 
         {/* Flashcards Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
               Your Flashcards
@@ -166,7 +166,7 @@ const DeckDetailPage = () => {
               {flashcards.map((card, index) => (
                 <div
                   key={card.id}
-                  className="group bg-gradient-to-br from-slate-50 to-gray-50 dark:from-gray-700 dark:to-gray-750 border border-gray-200 dark:border-gray-600 rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden"
+                  className="group bg-gradient-to-br from-white to-slate-50 dark:from-gray-700 dark:to-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden"
                 >
                   {/* Card Number Badge */}
                   <div className="absolute top-3 right-3 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-xs font-bold">
@@ -174,20 +174,20 @@ const DeckDetailPage = () => {
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border-l-4 border-blue-400">
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Question</p>
-                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{card.question}</p>
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-lg border-l-4 border-blue-500">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Question</p>
+                      <p className="text-gray-900 dark:text-gray-200 leading-relaxed">{card.question}</p>
                     </div>
 
-                    <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border-l-4 border-green-400">
-                      <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-1">Answer</p>
-                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{card.answer}</p>
+                    <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg border-l-4 border-green-500">
+                      <p className="text-sm font-medium text-green-800 dark:text-green-300 mb-1">Answer</p>
+                      <p className="text-gray-900 dark:text-gray-200 leading-relaxed">{card.answer}</p>
                     </div>
 
                     {card.hint && (
-                      <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg border-l-4 border-yellow-400">
-                        <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-1">Hint</p>
-                        <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{card.hint}</p>
+                      <div className="bg-yellow-100 dark:bg-yellow-900/30 p-4 rounded-lg border-l-4 border-yellow-500">
+                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">Hint</p>
+                        <p className="text-gray-900 dark:text-gray-200 leading-relaxed">{card.hint}</p>
                       </div>
                     )}
                   </div>
@@ -216,7 +216,7 @@ const DeckDetailPage = () => {
 
       {/* Create Flashcard Modal */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-8">
               <div className="flex items-center justify-between mb-6">

@@ -8,18 +8,20 @@ import Navbar from "./components/Navbar.jsx";
 import DeckDetailPage from "./pages/DeckDetailPage.jsx";
 import FlashcardDetailPage from "./pages/FlashcardDetailPage.jsx";
 import StudyModePage from "./pages/StudyModePage.jsx";
+import LoadingScreen from "./components/LoadingScreen.jsx";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 function ProtectedRoute({ children }) {
   const { isSignedIn, isLoaded } = useAuth();
 
-  if (!isLoaded) return <div>Loading...</div>;
+  if (!isLoaded) return <LoadingScreen />;
   if (!isSignedIn) return <HomePage />;
   return children;
 }
 
 function App() {
   const { isSignedIn, isLoaded } = useAuth();
-  if (!isLoaded) return <div>Loading...</div>;
+  if (!isLoaded) return <LoadingScreen />;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -49,7 +51,7 @@ function App() {
           <Route path=":deckId/study" element={<StudyModePage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </div>
     </div>

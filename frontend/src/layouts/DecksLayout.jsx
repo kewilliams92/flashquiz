@@ -88,7 +88,7 @@ const DecksLayout = () => {
       await axios.delete(`/api/decks/${deckId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchDecks();
+      await fetchDecks();
     } catch (err) {
       console.error("Error deleting deck:", err);
     } finally {

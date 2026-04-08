@@ -30,10 +30,6 @@ const StudyModePage = () => {
   }, [flashcards]);
 
   useEffect(() => {
-    setFlipped(false);
-  }, [currentIndex]);
-
-  useEffect(() => {
     if (flipped) {
       setCardsStudied((prev) => new Set([...prev, currentIndex]));
     }
@@ -41,7 +37,7 @@ const StudyModePage = () => {
 
   if (!selectedDeck || !cards.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+      <div className="min-h-full bg-gradient-to-br from-purple-100 via-blue-100 to-indigo-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -58,9 +54,14 @@ const StudyModePage = () => {
 
   const isLastCard = currentIndex === cards.length - 1;
 
-  const handleNext = () => setCurrentIndex((prev) => prev + 1);
-  const handlePrev = () =>
+  const handleNext = () => {
+    setFlipped(false);
+    setCurrentIndex((prev) => Math.min(prev + 1, cards.length - 1));
+  };
+  const handlePrev = () => {
+    setFlipped(false);
     setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
+  };
 
   const shuffleCards = (arr) => {
     const shuffled = [...arr];
@@ -83,13 +84,13 @@ const StudyModePage = () => {
   const currentCard = cards[currentIndex];
 
   return (
-    <div className="h-full bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden">
-      <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-3 flex flex-col gap-3 overflow-hidden">
+    <div className="h-full bg-gradient-to-br from-purple-100 via-blue-100 to-indigo-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
+      <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-3 flex flex-col gap-3">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-md px-5 py-3 border border-gray-100 dark:border-gray-700 flex-shrink-0"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-md px-5 py-3 border border-gray-200 dark:border-gray-700 flex-shrink-0"
         >
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -148,7 +149,7 @@ const StudyModePage = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex-1 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-4 p-5 overflow-hidden"
+          className="flex-1 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-4 p-5 overflow-hidden"
         >
           {/* Card Counter */}
           <AnimatePresence mode="wait">
@@ -158,15 +159,16 @@ const StudyModePage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.15 }}
-              className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/50 dark:to-blue-900/50 px-5 py-2 rounded-full"
+              className="bg-gradient-to-r from-purple-200 to-blue-200 dark:from-purple-900/50 dark:to-blue-900/50 px-5 py-2 rounded-full"
             >
-              <span className="text-purple-700 dark:text-purple-300 font-semibold text-sm">
+              <span className="text-purple-800 dark:text-purple-300 font-semibold text-sm">
                 Card {currentIndex + 1} of {cards.length}
               </span>
             </motion.div>
           </AnimatePresence>
 
           <FlipCard
+            key={currentIndex}
             front={currentCard.question}
             back={currentCard.answer}
             flipped={flipped}
@@ -275,7 +277,7 @@ const StudyModePage = () => {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               onClick={handleRestartStudy}
-              className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 px-5 py-2 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-all duration-200 text-sm font-semibold flex items-center gap-1.5"
+              className="bg-purple-200 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border border-purple-400 dark:border-purple-700 px-5 py-2 rounded-lg hover:bg-purple-300 dark:hover:bg-purple-900/60 transition-all duration-200 text-sm font-semibold flex items-center gap-1.5"
             >
               <svg
                 className="w-4 h-4"
@@ -296,7 +298,7 @@ const StudyModePage = () => {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => navigate(`/decks/${deckId}`)}
-              className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-5 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 text-sm font-semibold flex items-center gap-1.5"
+              className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border border-gray-400 dark:border-gray-600 px-5 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 text-sm font-semibold flex items-center gap-1.5"
             >
               <svg
                 className="w-4 h-4"

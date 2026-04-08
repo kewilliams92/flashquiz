@@ -9,6 +9,8 @@ const HintBox = ({ hint, currentIndex }) => {
     setShowHint(false);
   }, [currentIndex]);
 
+  if (!hint || !hint.trim()) return null;
+
   return (
     <div className="flex flex-col items-center gap-2 mt-4">
       <button
@@ -19,13 +21,13 @@ const HintBox = ({ hint, currentIndex }) => {
       </button>
 
       <AnimatePresence>
-        {showHint && hint && (
+        {showHint && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-lg px-4 py-2 max-w-xs text-center text-sm"
+            className="bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-lg px-4 py-2 max-w-xs text-center text-sm"
           >
             {hint}
           </motion.div>
