@@ -63,7 +63,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "flashquiz_proj.wsgi.application"
 
 # Database — uses Railway's DATABASE_URL in prod, local vars in dev
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL") or ""
 
 if DATABASE_URL:
     DATABASES = {
