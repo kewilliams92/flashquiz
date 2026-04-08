@@ -23,7 +23,6 @@ const DecksLayout = () => {
     try {
       //Clerk manages authentication for us.  Here we ask Clerk for the user's token
       const token = await getToken();
-      console.log("TOKEN:", token); // add this
       const res = await api.get("/api/decks/", {
         headers: { Authorization: `Bearer ${token}` },
       });

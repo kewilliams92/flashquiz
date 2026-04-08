@@ -3,10 +3,9 @@ from functools import wraps
 import requests
 from clerk_backend_api import Clerk
 from django.http import JsonResponse
+from flashquiz_proj.settings import CLERK_ISSUER, CLERK_JWKS_URL, CLERK_SECRET_KEY
 from jose import jwk, jwt
 from jose.exceptions import JWTError  # use jose's error, not PyJWT's
-
-from flashquiz_proj.settings import CLERK_ISSUER, CLERK_JWKS_URL, CLERK_SECRET_KEY
 
 
 def get_jwks():
@@ -33,10 +32,20 @@ def decode_token(token):
             public_key.to_pem().decode("utf-8"),
             algorithms=["RS256"],
             issuer=CLERK_ISSUER,
-            # removed audience — Clerk session tokens don't set this
         )
         return payload
     except JWTError as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"JWTError: {str(e)}")
+        logger.error(f"CLERK_ISSUER: {CLERK_ISSUER}")
+        raise ValueError(f"Token verification failed: {str(e)}")
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Unexpected error in decode_token: {type(e).__name__}: {str(e)}")
         raise ValueError(f"Token verification failed: {str(e)}")
 
 
