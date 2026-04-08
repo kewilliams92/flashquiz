@@ -23,12 +23,10 @@ const DecksLayout = () => {
     try {
       //Clerk manages authentication for us.  Here we ask Clerk for the user's token
       const token = await getToken();
-      //We send that token to our Django backend as a Bearer Token in the Authorization header.
-      //This lets Django verify the token (via Clerk) and confirm the request is from an authenticated user
+      console.log("TOKEN:", token); // add this
       const res = await api.get("/api/decks/", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      //If the token is valid, Django returns the user's decks.
       setDecks(res.data);
     } catch (err) {
       console.error("Error fetching decks:", err);
