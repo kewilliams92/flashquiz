@@ -1,0 +1,1 @@
+web: gunicorn flashquiz_proj.wsgi:application
