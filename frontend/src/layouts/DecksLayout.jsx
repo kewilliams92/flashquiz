@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import axios from "axios";
+import api from "../services/api";
 
 //NOTE: In this project, I wanted a single source of truth for decks, and flashcards so I created a layout component to hold the state
 //reason being that I want to share this state between multiple components (e.g. the DecksPage and the StudyModePage), and use my App.jsx for routing
@@ -25,7 +25,7 @@ const DecksLayout = () => {
       const token = await getToken();
       //We send that token to our Django backend as a Bearer Token in the Authorization header.
       //This lets Django verify the token (via Clerk) and confirm the request is from an authenticated user
-      const res = await axios.get("/api/decks/", {
+      const res = await api.get("/api/decks/", {
         headers: { Authorization: `Bearer ${token}` },
       });
       //If the token is valid, Django returns the user's decks.
@@ -49,7 +49,7 @@ const DecksLayout = () => {
     try {
       //Fetch flashcards tied to the selected deck
       const token = await getToken();
-      const res = await axios.get("/api/flashcards/", {
+      const res = await api.get("/api/flashcards/", {
         params: { deck_id: deck.id },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -64,7 +64,7 @@ const DecksLayout = () => {
   const createDeck = async (deckname, desc) => {
     try {
       const token = await getToken();
-      await axios.post(
+      await api.post(
         `/api/decks/`,
         { title: `${deckname}`, description: `${desc}` },
         {
@@ -85,7 +85,7 @@ const DecksLayout = () => {
     setDeleting(true);
     try {
       const token = await getToken();
-      await axios.delete(`/api/decks/${deckId}/`, {
+      await api.delete(`/api/decks/${deckId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       await fetchDecks();
@@ -105,7 +105,7 @@ const DecksLayout = () => {
     //2. Generate flashcards based on the topic with OpenAI
     try {
       const token = await getToken();
-      const res = await axios.post(
+      const res = await api.post(
         "/api/generate-flashcards/",
         { topic },
         { headers: { Authorization: `Bearer ${token}` } },
@@ -128,7 +128,7 @@ const DecksLayout = () => {
   const fetchFlashcard = async (flashcardId) => {
     try {
       const token = await getToken();
-      const res = await axios.get(`/api/flashcards/${flashcardId}/`, {
+      const res = await api.get(`/api/flashcards/${flashcardId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -149,7 +149,7 @@ const DecksLayout = () => {
       };
 
       //This time we also attach the payload to our Django backend request
-      const res = await axios.post(`/api/flashcards/`, payload, {
+      const res = await api.post(`/api/flashcards/`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -164,7 +164,7 @@ const DecksLayout = () => {
   const editFlashcard = async (flashcardId, updatedData) => {
     try {
       const token = await getToken();
-      const res = await axios.put(
+      const res = await api.put(
         `/api/flashcards/${flashcardId}/`,
         updatedData,
         {
@@ -186,7 +186,7 @@ const DecksLayout = () => {
   const deleteFlashcard = async (flashcardId) => {
     try {
       const token = await getToken();
-      await axios.delete(`/api/flashcards/${flashcardId}/`, {
+      await api.delete(`/api/flashcards/${flashcardId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
