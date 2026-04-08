@@ -1,27 +1,34 @@
-import os
-import wikipedia
 import logging
-from wikipedia.exceptions import DisambiguationError, PageError
+import os
+
+import anthropic
 from django.shortcuts import get_object_or_404
 from dotenv import load_dotenv
-from flashquiz_proj.utils.auth_utils import clerk_authenticated
-from openai import OpenAI
 from rest_framework.response import Response
-from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
-                                   HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,
-                                   HTTP_404_NOT_FOUND,
-                                   HTTP_500_INTERNAL_SERVER_ERROR)
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 from rest_framework.views import APIView
 
+from flashquiz_proj.utils.auth_utils import clerk_authenticated
+
 from .models import Deck, Feedback, Flashcard
-from .serializers import (DeckSerializer, FeedbackSerializer,
-                          FlashcardSerializer)
-from .utils.helperfunc import validate_flashcard
+from .serializers import DeckSerializer, FeedbackSerializer, FlashcardSerializer
+from .utils.helperfunc import (
+    WikipediaAmbiguousError,
+    WikipediaNotFoundError,
+    fetch_wikipedia_content,
+    validate_flashcard,
+)
 
 load_dotenv()
 logger = logging.getLogger(__name__)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-access_token = os.getenv("WIKIPEDIA_ACCESS_TOKEN")
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
 class GenerateFlashcardsView(APIView):
@@ -36,152 +43,111 @@ class GenerateFlashcardsView(APIView):
             return Response(
                 {"error": "Topic not provided."}, status=HTTP_400_BAD_REQUEST
             )
-        
-        logger.info(f"Searching for topic: {topic}")
-        
-        # Fetch Wikipedia content using the wikipedia library
+
         try:
-            # Try to get the page directly - first with auto_suggest off
-            wiki_page = wikipedia.page(topic, auto_suggest=False)
-            wiki_summary = wiki_page.summary
-            page_title = wiki_page.title
-            logger.info(f"Found direct match: {page_title}")
-            
-        except PageError:
-            # If that fails, try with auto_suggest on for one attempt
-            logger.info(f"No exact match, trying with auto-suggest...")
-            try:
-                wiki_page = wikipedia.page(topic, auto_suggest=True)
-                wiki_summary = wiki_page.summary
-                page_title = wiki_page.title
-                logger.info(f"Found match with auto-suggest: {page_title}")
-                
-                # Only proceed if the result seems reasonable
-                topic_words = set(topic.lower().split())
-                title_words = set(page_title.lower().split())
-                
-                # Check if at least one word matches
-                if not topic_words.intersection(title_words):
-                    logger.warning(f"Auto-suggest result '{page_title}' doesn't match '{topic}'")
-                    raise PageError(topic)
-                    
-            except PageError:
-                logger.info(f"Auto-suggest failed, falling back to search...")
-                # Fall back to search
-                search_results = wikipedia.search(topic, results=5)
-                logger.info(f"Search results: {search_results}")
-                
-                if not search_results:
-                    return Response(
-                        {"error": f"No Wikipedia page found for '{topic}'."},
-                        status=HTTP_404_NOT_FOUND,
-                    )
-                
-                # Try to find a close match (case-insensitive)
-                topic_lower = topic.lower()
-                best_match = None
-                
-                for result in search_results:
-                    if result.lower() == topic_lower:
-                        best_match = result
-                        break
-                
-                # If no exact match, use the first search result
-                if not best_match:
-                    best_match = search_results[0]
-                
-                logger.info(f"Using best match from search: {best_match}")
-                
-                try:
-                    wiki_page = wikipedia.page(best_match, auto_suggest=False)
-                    wiki_summary = wiki_page.summary
-                    page_title = wiki_page.title
-                    logger.info(f"Successfully fetched page: {page_title}")
-                        
-                except PageError:
-                    return Response(
-                        {"error": f"Could not fetch Wikipedia content for '{topic}'."},
-                        status=HTTP_404_NOT_FOUND,
-                    )
-            
-        except DisambiguationError as e:
-            logger.info(f"Disambiguation needed. Options: {e.options[:3]}")
-            # If the topic is ambiguous, use the first option
-            try:
-                wiki_page = wikipedia.page(e.options[0], auto_suggest=False)
-                wiki_summary = wiki_page.summary
-                page_title = wiki_page.title
-                logger.info(f"Used first disambiguation option: {page_title}")
-            except (PageError, IndexError):
-                return Response(
-                    {"error": f"The topic '{topic}' is ambiguous. Please be more specific."},
-                    status=HTTP_400_BAD_REQUEST,
-                )
-        
-        # Check if we have content
+            page_title, wiki_summary = fetch_wikipedia_content(topic)
+        except WikipediaNotFoundError as e:
+            return Response({"error": str(e)}, status=HTTP_404_NOT_FOUND)
+        except WikipediaAmbiguousError as e:
+            return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+
         if not wiki_summary:
             logger.error("No summary content found")
             return Response(
                 {"error": "No source content found for this topic."},
                 status=HTTP_404_NOT_FOUND,
             )
-        
+
         logger.info(f"Summary length: {len(wiki_summary)} characters")
-        
+
         ai_prompt = f"""
-        You are an educational AI assistant. 
-        Given the following article, create **exactly 5 flashcards**.
-        Each flashcard should have important information about the topic.
-        Try to keep each flashcard unique (e.g. do not create multiple flashcards based on personal life)
-        Each flashcard must be a JSON object with exactly these fields:
-        - "question": the question text. Questions must not exceed 50 characters
-        - "answer": the answer text
-        - "hint": a helpful hint for the question
-        
-        Article title: {page_title}
-        Article summary: {wiki_summary}
-        
-        Return ONLY valid JSON array of objects. Do NOT include any extra text.
-        Example:
-        [
-          {{"question": "Q1", "answer": "A1", "hint": "Hint1"}},
-          ...
-        ]
-        """
+You are a flashcard generator. Given Wikipedia content, extract specific, testable facts and format them as flashcards.
+
+Rules:
+- ONE fact per card. Never combine two facts into one card.
+- The question must NOT contain or imply the answer.
+- The answer must state the fact directly and concisely (a number, name, date, ranking, etc.).
+- The hint must help narrow down the answer WITHOUT restating the question or giving the answer away. It should eliminate wrong guesses, not confirm the right one.
+- Avoid trivia-style "what is X" questions where the answer is just the definition of X.
+- Prefer questions that test relationships, rankings, quantities, causes, or contrasts.
+
+Bad example:
+Q: How many UN official languages is Arabic?
+A: One of six official languages
+Hint: It ranks third after English and French
+
+Good example:
+Q: How many official languages does the United Nations recognize?
+A: Six
+Hint: Arabic and Chinese were added in 1973, bringing the total up from four
+
+Generate exactly 5 flashcards. Each must be a JSON object with these fields:
+- "question": the question text
+- "answer": the answer text (a specific fact — number, name, date, etc.)
+- "hint": a hint that narrows down the answer without giving it away
+
+Article title: {page_title}
+Article summary: {wiki_summary}
+
+Return ONLY a valid JSON array. Do NOT include any extra text.
+Example:
+[
+  {{"question": "Q1", "answer": "A1", "hint": "Hint1"}},
+  ...
+]
+"""
 
         short_summary = f"""
-        TAKE THE WIKI SUMMARY AND CREATE A SHORT SUMMARY OF 200 characters MAX!
-        THE SHORT SUMMARY MUST HAVE SURFACE LEVEL INFORMATION ABOUT THE TOPIC
+Create a short summary (200 characters max) with surface-level information about the topic.
 
-        Provided summary: {wiki_summary}
+Provided summary: {wiki_summary}
 
-        RETURN ONLY VALID STRING 
-        Example:
-        "Kevin Hart ... ... ...
-        """
-        
-        ai_response = client.responses.create(model="gpt-4o-mini", input=ai_prompt)
-        ai_summary = client.responses.create(model="gpt-4o-mini", input=short_summary)
+Return ONLY a plain string with no extra text or formatting.
+"""
+
+        try:
+            ai_response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": ai_prompt}],
+            )
+            ai_summary = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=256,
+                messages=[{"role": "user", "content": short_summary}],
+            )
+        except anthropic.APIStatusError as e:
+            logger.error(f"Anthropic API error: {e.status_code} - {e.message}")
+            return Response(
+                {"error": "AI service error. Please try again."},
+                status=HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except anthropic.APIConnectionError as e:
+            logger.error(f"Anthropic connection error: {e}")
+            return Response(
+                {"error": "Could not reach AI service. Please try again."},
+                status=HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         logger.info(f"=== AI RAW RESPONSE ===")
-        logger.info(ai_response.output_text)
+        logger.info(ai_response.content[0].text)
         logger.info(f"=== END RAW RESPONSE ===")
-        
-        flashcards_data = validate_flashcard(ai_response.output_text)
+
+        flashcards_data = validate_flashcard(ai_response.content[0].text)
         logger.info(f"Validated flashcards count: {len(flashcards_data)}")
-        
+
         if not flashcards_data:
             return Response(
                 {"error": "Failed to generate flashcards."},
                 status=HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # Save to the user's deck using the proper Wikipedia page title
         deck, created = Deck.objects.get_or_create(
             user_id=request.user_details.id,
             title=page_title,
-            defaults={"description": ai_summary.output_text},  
+            defaults={"description": ai_summary.content[0].text},
         )
-        
+
         saved_flashcards = []
         for card in flashcards_data:
             fc = Flashcard.objects.create(
@@ -198,7 +164,7 @@ class GenerateFlashcardsView(APIView):
                     "hint": fc.hint,
                 }
             )
-        
+
         return Response(
             {
                 "deck": {"id": deck.id, "title": deck.title},
@@ -206,7 +172,7 @@ class GenerateFlashcardsView(APIView):
             },
             status=HTTP_201_CREATED,
         )
-    
+
 
 class DeckListCreateView(APIView):
     @clerk_authenticated
@@ -273,7 +239,6 @@ class FlashcardListCreateView(APIView):
         flashcards = Flashcard.objects.filter(deck__id=deck_id, deck__user_id=user_id)
         serializer = FlashcardSerializer(flashcards, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
-
 
     @clerk_authenticated
     def post(self, request):
@@ -351,19 +316,18 @@ class FeedbackListCreateView(APIView):
 
 class FeedbackDetailView(APIView):
 
-    @clerk_authenticated
     def get_object(self, pk):
         return get_object_or_404(Feedback, pk=pk)
 
     @clerk_authenticated
     def get(self, request, pk):
-        feedback = Feedback.get_object(pk)
+        feedback = self.get_object(pk)
         serializer = FeedbackSerializer(feedback)
         return Response(serializer.data, status=HTTP_200_OK)
 
     @clerk_authenticated
     def put(self, request, pk):
-        feedback = Feedback.get_object(pk)
+        feedback = self.get_object(pk)
         serializer = FeedbackSerializer(feedback, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -372,6 +336,6 @@ class FeedbackDetailView(APIView):
 
     @clerk_authenticated
     def delete(self, request, pk):
-        feedback = Feedback.get_object(pk)
+        feedback = self.get_object(pk)
         feedback.delete()
         return Response(status=HTTP_204_NO_CONTENT)

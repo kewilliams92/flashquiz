@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-zg$7l#^tn7+-8lz39#4l5pqjdno4hn3gtizs0799xqf^0_l%f#"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # NOTE: In order to run this project with Clerk, you will need to create the following environment variables that Clerk provides.
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
@@ -32,7 +32,7 @@ CLERK_ISSUER = os.getenv("CLERK_ISSUER")
 CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", False)
 
 ALLOWED_HOSTS = []
 
@@ -88,9 +88,9 @@ WSGI_APPLICATION = "flashquiz_proj.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "flashquiz_db",
+        "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD")
+        "PASSWORD": os.getenv("DB_PASSWORD"),
     }
 }
 
