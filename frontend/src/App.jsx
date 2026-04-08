@@ -22,8 +22,9 @@ function App() {
   if (!isLoaded) return <div>Loading...</div>;
 
   return (
-    <>
+    <div className="h-screen flex flex-col overflow-hidden">
       <Navbar />
+      <div className="flex-1 overflow-y-auto overscroll-none">
       <Routes>
         {/* Home route */}
         <Route
@@ -50,7 +51,8 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+      </div>
+    </div>
   );
 }
 

@@ -85,19 +85,19 @@ const DeckDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8 border border-gray-100 dark:border-gray-700">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {selectedDeck.title}
                 </h1>
               </div>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {selectedDeck.description || "No description available"}
               </p>
 
@@ -132,13 +132,13 @@ const DeckDetailPage = () => {
         </div>
 
         {/* Flashcards Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
               Your Flashcards
             </h2>
             {flashcards.length > 0 && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 {flashcards.length} card{flashcards.length !== 1 ? "s" : ""} in
                 this deck
               </div>
@@ -147,10 +147,10 @@ const DeckDetailPage = () => {
 
           {flashcards.length === 0 ? (
             <div className="text-center py-16">
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
                 No flashcards yet
               </h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-md mx-auto">
                 Get started by adding your first flashcard to this deck. You can
                 create them manually or let AI help you generate content.
               </p>
@@ -166,40 +166,28 @@ const DeckDetailPage = () => {
               {flashcards.map((card, index) => (
                 <div
                   key={card.id}
-                  className="group bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden"
+                  className="group bg-gradient-to-br from-slate-50 to-gray-50 dark:from-gray-700 dark:to-gray-750 border border-gray-200 dark:border-gray-600 rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden"
                 >
                   {/* Card Number Badge */}
-                  <div className="absolute top-3 right-3 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="absolute top-3 right-3 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-xs font-bold">
                     {index + 1}
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
-                      <p className="text-sm font-medium text-blue-700 mb-1">
-                        Question
-                      </p>
-                      <p className="text-gray-800 leading-relaxed">
-                        {card.question}
-                      </p>
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border-l-4 border-blue-400">
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Question</p>
+                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{card.question}</p>
                     </div>
 
-                    <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                      <p className="text-sm font-medium text-green-700 mb-1">
-                        Answer
-                      </p>
-                      <p className="text-gray-800 leading-relaxed">
-                        {card.answer}
-                      </p>
+                    <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border-l-4 border-green-400">
+                      <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-1">Answer</p>
+                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{card.answer}</p>
                     </div>
 
                     {card.hint && (
-                      <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-                        <p className="text-sm font-medium text-yellow-700 mb-1">
-                          Hint
-                        </p>
-                        <p className="text-gray-800 leading-relaxed">
-                          {card.hint}
-                        </p>
+                      <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg border-l-4 border-yellow-400">
+                        <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-1">Hint</p>
+                        <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{card.hint}</p>
                       </div>
                     )}
                   </div>
@@ -229,10 +217,10 @@ const DeckDetailPage = () => {
       {/* Create Flashcard Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   Add New Flashcard
                 </h3>
                 <button
@@ -257,10 +245,7 @@ const DeckDetailPage = () => {
 
               <form onSubmit={handleCreateFlashcard} className="space-y-6">
                 <div>
-                  <label
-                    htmlFor="question"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
+                  <label htmlFor="question" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Question *
                   </label>
                   <textarea
@@ -269,17 +254,14 @@ const DeckDetailPage = () => {
                     value={formData.question}
                     onChange={handleFormChange}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
                     rows="4"
                     placeholder="What do you want to ask on this flashcard?"
                   />
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="answer"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
+                  <label htmlFor="answer" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Answer *
                   </label>
                   <textarea
@@ -288,17 +270,14 @@ const DeckDetailPage = () => {
                     value={formData.answer}
                     onChange={handleFormChange}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
                     rows="4"
                     placeholder="What's the correct answer?"
                   />
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="hint"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
+                  <label htmlFor="hint" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Hint (Optional)
                   </label>
                   <input
@@ -307,7 +286,7 @@ const DeckDetailPage = () => {
                     name="hint"
                     value={formData.hint}
                     onChange={handleFormChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     placeholder="Add a helpful hint (optional)"
                   />
                 </div>
@@ -316,7 +295,7 @@ const DeckDetailPage = () => {
                   <button
                     type="button"
                     onClick={handleCancelCreate}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium"
+                    className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                     disabled={isSubmitting}
                   >
                     Cancel
