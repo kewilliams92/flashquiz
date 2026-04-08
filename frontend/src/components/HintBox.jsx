@@ -1,26 +1,38 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 //NOTE: I wanted a handy hint box for my flashcards, so I created this component.  It uses Framer Motion to animate the hint box in and out for the user to control.
-const HintBox = ({ hint }) => {
+const HintBox = ({ hint, currentIndex }) => {
   const [showHint, setShowHint] = useState(false);
 
+  useEffect(() => {
+    setShowHint(false);
+  }, [currentIndex]);
+
+  if (!hint || !hint.trim()) return null;
+
   return (
-    <div className="flex items-center space-x-2 mt-4">
+    <div className="flex flex-col items-center gap-2 mt-4">
       <button
-        onClick={() => setShowHint(!showHint)}
-        className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-500 transition"
+        onClick={() => setShowHint((prev) => !prev)}
+        className="bg-yellow-500 dark:bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-400 dark:hover:bg-yellow-500 transition"
       >
-        Hint
+        {showHint ? "Hide Hint" : "Show Hint"}
       </button>
 
-      <div
-        className={`transition-all duration-300 overflow-hidden border rounded px-3 py-2 min-w-[200px] ${
-          showHint ? "bg-gray-100 text-gray-800" : "bg-gray-50 text-gray-50"
-        }`}
-      >
-        {showHint ? hint : ""}
-      </div>
+      <AnimatePresence>
+        {showHint && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            className="bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-lg px-4 py-2 max-w-xs text-center text-sm"
+          >
+            {hint}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

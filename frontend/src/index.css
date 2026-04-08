@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body {
+  background-color: #f8fafc; /* slate-50 — matches light gradient */
+  overscroll-behavior: none;
+}
+
+html.dark,
+html.dark body {
+  background-color: #111827; /* gray-900 — matches dark gradient */
+}
+
 .perspective {
   perspective: 1000px;
 }

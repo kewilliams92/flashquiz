@@ -12,6 +12,7 @@ const DecksLayout = () => {
   const [decks, setDecks] = useState([]);
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   //First when the page loads, we want to fetch the decks the user has created so far
   const fetchDecks = async () => {
@@ -81,14 +82,17 @@ const DecksLayout = () => {
     //Gives the user a confirmation before deleting
     if (!window.confirm("Are you sure you want to delete this deck?")) return;
 
+    setDeleting(true);
     try {
       const token = await getToken();
       await axios.delete(`/api/decks/${deckId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchDecks();
+      await fetchDecks();
     } catch (err) {
       console.error("Error deleting deck:", err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -211,6 +215,7 @@ const DecksLayout = () => {
         fetchDecks,
         selectDeck,
         deleteDeck,
+        deleting,
         fetchFlashcard,
         editFlashcard,
         deleteFlashcard,
