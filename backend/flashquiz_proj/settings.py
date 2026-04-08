@@ -62,10 +62,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "flashquiz_proj.wsgi.application"
 
-# Database — uses Railway's DATABASE_URL in prod, local vars in dev
 DATABASE_URL = os.getenv("DATABASE_URL") or ""
 
-if DATABASE_URL:
+if DATABASE_URL and DATABASE_URL.startswith(("postgres://", "postgresql://")):
     DATABASES = {
         "default": dj_database_url.config(
             default=DATABASE_URL,
@@ -80,6 +79,8 @@ else:
             "NAME": os.getenv("DB_NAME"),
             "USER": os.getenv("DB_USER"),
             "PASSWORD": os.getenv("DB_PASSWORD"),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
 
