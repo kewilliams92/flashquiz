@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const LoadingScreen = () => {
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-200 via-blue-100 to-indigo-200">
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-200 via-blue-100 to-indigo-200" role="status" aria-live="polite">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -25,10 +25,12 @@ const LoadingScreen = () => {
                 delay: i * 0.15,
                 ease: "easeInOut",
               }}
+              aria-hidden="true"
             />
           ))}
         </div>
 
+        <span className="sr-only">Loading, please wait</span>
         <p className="text-gray-500 text-sm">Let's do this!</p>
       </motion.div>
     </div>

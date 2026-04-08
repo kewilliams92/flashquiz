@@ -156,6 +156,10 @@ const DecksPage = () => {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25 }}
             className="fixed top-20 right-6 z-50 bg-white dark:bg-gray-800 border border-red-200 dark:border-red-700 rounded-xl shadow-xl px-5 py-4 flex items-center gap-3"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label="Deleting deck"
           >
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-500 flex-shrink-0" />
             <div>
